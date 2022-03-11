@@ -8,12 +8,7 @@
 #include <signal.h>          
 #include <readline/readline.h> 
 
-/*
-	Node with properties of a process
-	pid:process id
-	process:process name
-	is running:1 if is running, 0 if not
-*/
+
 typedef struct node {
 	pid_t pid;
 	int isRunning;
@@ -24,7 +19,8 @@ node* backgroundProcess = NULL;
 
 
 /*
- using to pid to find the node from given list 
+	s: a string
+s a node with a given pid to the list of processes
 */
 node* getNodeFromList(pid_t pid) {
 	node* current = backgroundProcess;
@@ -36,9 +32,6 @@ node* getNodeFromList(pid_t pid) {
 	}
 	return NULL;
 }
-/*
- return 0 if process exist
-*/
 
 int processExist(pid_t pid) {
 	node* theProcess = backgroundProcess;
@@ -51,9 +44,6 @@ int processExist(pid_t pid) {
 	return 0;
 }
 
-/*
- using to pid to find the node and remove from given list 
-*/
 void removeProcess(pid_t pid)
 {
     node *current;
@@ -74,17 +64,14 @@ void removeProcess(pid_t pid)
 	current=current->next;
 }
 }
-/*
- if userinput is valid, start running a process
-*/
 void bg(char** userInput) {
 	pid_t pid = fork();
-	if (pid == 0) {   // if it's in child node
+	if (pid == 0) {    // child
 		char* command = userInput[1];
 		execvp(command, &userInput[1]);
 		printf("cannot execute command %s\n", command);
 		exit(1);
-	} else if (pid > 0) {// if it's in parent node
+	} else if (pid > 0) {		// parent
 	    node* newProcess = (node*)malloc(sizeof(node));
 	    printf("starting background process %d\n", pid);
 		newProcess->process = userInput[1];
@@ -106,9 +93,6 @@ void bg(char** userInput) {
 		exit(1);
 	}
 }
-/*
- kill the process given the pid
-*/
 void bgkill(pid_t pid) {
 	if (!processExist(pid)) {
 		printf("Error: process %d does not exist",pid);
@@ -125,7 +109,8 @@ void bgkill(pid_t pid) {
 }
 
 /*
-	sends the STOP signal to stop a process
+	pid: a process id
+	sends the STOP signal to a process pid to temporarily stop it
 */
 void bgstop(pid_t pid) {
 	if (!processExist(pid)) {
@@ -144,7 +129,8 @@ void bgstop(pid_t pid) {
 }
 
 /*
-	start the process with given pid using CONT signal
+	pid: a process id
+	sends the CONT signal to a stopped process pid to restart it
 */
 void bgstart(pid_t pid) {
 	if (!processExist(pid)) {
@@ -163,7 +149,7 @@ void bgstart(pid_t pid) {
 }
 
 /*
-	shows all proccesses currently executing in the background
+	displays a list of all programs currently executing in the background
 */
 void bglist() {
 	int count = 0;
@@ -183,7 +169,8 @@ void bglist() {
 }
 
 /*
-	read from file,and compile contensts into a 2d array
+	pid: a process id
+	lists information relevant to a process pid
 */
 void readFile(char* filePath, char fileContents[200][200] ) {
 	FILE *fp = fopen(filePath, "r");
@@ -205,9 +192,7 @@ void readFile(char* filePath, char fileContents[200][200] ) {
 		printf("Error: could not read file\n");
 	}
 }
-/*
-	display comm, state,utime,stijme,voluntary switches and unvoluntary switches of the process
-*/
+
 void pstat(pid_t pid) {
 	if (processExist(pid)) {
 		char procstat[200];
@@ -233,9 +218,7 @@ void pstat(pid_t pid) {
 		printf(" Process does not exist.\n");
 	}
 }
-/*
-	check if the char array is a number
-*/
+
 int isNumber(char s[])
 {
     for (int i = 0; s[i]!= '\0'; i++)
@@ -246,9 +229,6 @@ int isNumber(char s[])
     return 1;
 }
 
-/*
-   run functions depend on userinput
-*/
 void InputToCommand(char** userInput) {
 	if(strcmp(userInput[0],"bglist")==0){
 		bglist();
@@ -289,7 +269,7 @@ void InputToCommand(char** userInput) {
 }
 
 /*
-	terminate processes that need to be terminated
+	updates process list running statuses
 */
 
 void check_zombieProcess() {
@@ -309,11 +289,10 @@ void check_zombieProcess() {
 	}
 }
 
-
+/* ---------- Main ---------- */
 
 /*
-   looking for user command and excecute usercommands
-   terminate zombie processes
+	An interactive prompt that can run processes in the background on Unix
 */
 
 int main() {
